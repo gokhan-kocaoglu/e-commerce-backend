@@ -1,0 +1,6 @@
+security:
+  jwt:
+    # Env varsa onu kullan, yoksa dev fallback kullan
+    secret: ${JWT_SECRET_BASE64:DEV_CHANGE_ME_BASE64}
+    access-ttl: PT30M       # JwtTokenProviderImpl Duration için
+    refresh-ttl: P7D

@@ -1,0 +1,5 @@
+security:
+  jwt:
+    secret: "v1oVWP2gzZqeLqFu/UtUYI5naB4AM96wIoRe1LCdEBcU7BSBbg8bwaKW31sUHfEyJR9RhGjXOp8VQi3FoVhE2w==" # 32+ byte base64
+    access-ttl: PT5M
+    refresh-ttl: P1D
