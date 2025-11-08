@@ -9,6 +9,7 @@ import com.commerce.e_commerce.dto.catalog.CartResponse;
 import com.commerce.e_commerce.dto.common.MoneyDto;
 import com.commerce.e_commerce.exceptions.ApiException;
 import com.commerce.e_commerce.mapper.CartMapper;
+import com.commerce.e_commerce.mapper.CommonMapperStatics;
 import com.commerce.e_commerce.repository.cart.CartItemRepository;
 import com.commerce.e_commerce.repository.cart.CartRepository;
 import com.commerce.e_commerce.repository.catalog.ProductVariantRepository;
@@ -140,11 +141,11 @@ public class CartServiceImpl implements CartService {
 
         return mapper.toCartResponse(
                 cart,
-                MoneyDto.tryL(itemsTotal),
-                MoneyDto.tryL(shipping),
-                MoneyDto.tryL(discount),
-                MoneyDto.tryL(tax),
-                MoneyDto.tryL(grand)
+                CommonMapperStatics.centsToUsd(itemsTotal),
+                CommonMapperStatics.centsToUsd(shipping),
+                CommonMapperStatics.centsToUsd(discount),
+                CommonMapperStatics.centsToUsd(tax),
+                CommonMapperStatics.centsToUsd(grand)
         );
     }
 }

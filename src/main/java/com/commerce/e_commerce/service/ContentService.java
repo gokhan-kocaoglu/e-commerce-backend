@@ -11,4 +11,6 @@ public interface ContentService {
     List<AnnouncementResponse> activeAnnouncements();
     List<CampaignResponse> activeCampaigns();
     EditorsPickResponse getEditorsPick(UUID pickId);
+
+
 }

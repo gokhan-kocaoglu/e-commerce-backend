@@ -1,5 +1,12 @@
 package com.commerce.e_commerce.dto.common;
 
-public record MoneyDto(long amount, String currency) {
-    public static MoneyDto tryL(long amount) { return new MoneyDto(amount, "TRY"); }
+import java.math.BigDecimal;
+
+public record MoneyDto(
+        BigDecimal amount,
+        String currency
+) {
+    public static MoneyDto usd(BigDecimal amount) {
+        return new MoneyDto(amount, "USD");
+    }
 }

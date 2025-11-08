@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -59,7 +60,9 @@ public class BrandServiceImpl implements BrandService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<BrandResponse> list(Pageable pageable) {
-        return brandRepo.findAll(pageable).map(mapper::toBrandResponse);
+    public List<BrandResponse> listAll() {
+        // İstersen sabit bir sıralama da verebilirsin:
+        var all = brandRepo.findAll(org.springframework.data.domain.Sort.by("name").ascending());
+        return all.stream().map(mapper::toBrandResponse).toList();
     }
 }

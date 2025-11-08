@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID>, ProductRepositoryCustom {
+
+    boolean existsBySlugAndDeletedFalse(String slug);
     Optional<Product> findBySlugAndDeletedFalse(String slug);
 
     @Query("""

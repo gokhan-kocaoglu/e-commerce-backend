@@ -5,12 +5,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -34,7 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwt.validate(token)) {
             UUID userId = jwt.getUserId(token);
             // Roller de token içindeyse buradan okuyup ekleyebilirsin
-            var auth = new UsernamePasswordAuthenticationToken(userId, null, /*authorities*/ null);
+
+            List<String> roleNames = jwt.getRoleNames(token); // ["ROLE_ADMIN","ROLE_USER",...]
+            var authorities = roleNames.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+
+            var auth = new UsernamePasswordAuthenticationToken(userId, null, authorities);
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }

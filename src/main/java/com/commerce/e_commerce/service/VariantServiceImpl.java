@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -42,6 +43,15 @@ public class VariantServiceImpl implements VariantService {
     public VariantResponse update(UUID id, VariantUpdateRequest req) {
         var v = variantRepo.findById(id)
                 .orElseThrow(() -> new ApiException("VARIANT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // SKU değişiyorsa aynı product içinde benzersizlik
+        if (req.sku() != null && !req.sku().equals(v.getSku())) {
+            var productId = v.getProduct().getId();
+            if (variantRepo.existsByProductIdAndSkuAndDeletedFalse(productId, req.sku())) {
+                throw new ApiException("VARIANT_SKU_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
+            }
+        }
+
         mapper.updateVariant(v, req);
         return mapper.toVariantResponse(v);
     }
@@ -51,5 +61,28 @@ public class VariantServiceImpl implements VariantService {
         var v = variantRepo.findById(id)
                 .orElseThrow(() -> new ApiException("VARIANT_NOT_FOUND", HttpStatus.NOT_FOUND));
         variantRepo.delete(v);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VariantResponse getById(UUID id) {
+        var v = variantRepo.findById(id)
+                .orElseThrow(() -> new ApiException("VARIANT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        return mapper.toVariantResponse(v);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VariantResponse getByProductAndSku(UUID productId, String sku) {
+        var v = variantRepo.findByProductIdAndSkuAndDeletedFalse(productId, sku)
+                .orElseThrow(() -> new ApiException("VARIANT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        return mapper.toVariantResponse(v);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VariantResponse> listByProduct(UUID productId) {
+        var list = variantRepo.findByProductIdAndDeletedFalse(productId);
+        return list.stream().map(mapper::toVariantResponse).toList();
     }
 }

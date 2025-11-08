@@ -58,7 +58,7 @@ public final class UserPrincipal implements UserDetails {
         return new SimpleGrantedAuthority(name);
     }
 
-    // ---- Extra getter’lar (ihtiyaç olursa)
+
     public UUID getId() { return id; }
     public String getEmail() { return email; }
 

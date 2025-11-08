@@ -2,15 +2,30 @@ package com.commerce.e_commerce.mapper;
 
 import com.commerce.e_commerce.dto.common.MoneyDto;
 import org.mapstruct.Mapper;
+import org.mapstruct.Named;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Mapper(config = MapstructConfig.class)
 public interface CommonMapper {
-    // cents -> MoneyDto
-    default MoneyDto toMoneyDto(Long cents) {
-        return cents == null ? null : MoneyDto.tryL(cents);
+
+    @Named("bigDecimalToCents")
+    default Long bigDecimalToCents(BigDecimal amount) {
+        if (amount == null) return null;
+        return amount.movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact();
     }
-    // MoneyDto -> cents (genelde request’te MoneyDto yok; ama dursun)
-    default Long toCents(MoneyDto money) {
-        return (money == null) ? null : money.amount();
+
+    @Named("centsToBigDecimal")
+    default BigDecimal centsToBigDecimal(Long cents) {
+        if (cents == null) return null;
+        return new BigDecimal(cents).movePointLeft(2);
+    }
+
+    // Response için USD
+    @Named("centsToUsdMoney")
+    default MoneyDto centsToUsdMoney(Long cents) {
+        if (cents == null) return null;
+        return new MoneyDto(centsToBigDecimal(cents), "USD");
     }
 }

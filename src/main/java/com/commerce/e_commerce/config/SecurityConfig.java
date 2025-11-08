@@ -15,6 +15,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -28,6 +29,7 @@ import java.util.List;
 
 @Configuration
 @AllArgsConstructor(onConstructor_ = @__(@Autowired))
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -63,26 +65,34 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-
+                        // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Swagger ve açık uçlar
-                        .requestMatchers(
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
-                        ).permitAll()
+
+                        // Swagger
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Auth uçları açık
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
-                        // İçerik vitrinlerini anonim açmak istersen:
+
+                        // Vitrin GET'leri (anonim erişim)
                         .requestMatchers(HttpMethod.GET, "/api/catalog/**", "/api/content/**", "/api/marketing/**").permitAll()
-                        // Admin örneği
+
+                        // --- YÖNETİM/YAZMA OPERASYONLARI SADECE ADMIN ---
+                        .requestMatchers(HttpMethod.POST,   "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,  "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
+
+                        // (Varsa) yönetim paneli
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // Diğer her şey auth ister
+
+                        // geri kalan her şey auth ister
                         .anyRequest().authenticated()
                 )
-                // Exception handling (opsiyonel özelleştirirsin)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401))
                         .accessDeniedHandler((req, res, e) -> res.sendError(403))
                 )
-                // JWT filtresini UsernamePasswordAuthenticationFilter'dan önce ekle
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

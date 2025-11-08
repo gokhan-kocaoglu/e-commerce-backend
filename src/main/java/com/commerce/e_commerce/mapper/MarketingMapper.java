@@ -1,8 +1,12 @@
 package com.commerce.e_commerce.mapper;
 
+import com.commerce.e_commerce.domain.catalog.Category;
 import com.commerce.e_commerce.domain.marketing.Collection;
 import com.commerce.e_commerce.domain.marketing.CollectionItem;
 import com.commerce.e_commerce.domain.marketing.Coupon;
+import com.commerce.e_commerce.domain.marketing.EditorsPick;
+import com.commerce.e_commerce.dto.content.EditorsPickRequest;
+import com.commerce.e_commerce.dto.content.EditorsPickResponse;
 import com.commerce.e_commerce.dto.marketing.CollectionRequest;
 import com.commerce.e_commerce.dto.marketing.CollectionResponse;
 import com.commerce.e_commerce.dto.marketing.CouponRequest;
@@ -13,6 +17,32 @@ import java.util.List;
 
 @Mapper(config = MapstructConfig.class)
 public interface MarketingMapper {
+
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "categories", ignore = true) // IDs -> entities service’te resolve
+    EditorsPick toEditorsPick(EditorsPickRequest req);
+
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "key", source = "key")
+    @Mapping(target = "categories", ignore = true) // güncellemede de service resolve
+    void updateEditorsPick(@MappingTarget EditorsPick e, EditorsPickRequest req);
+
+    // Entity -> Response (categoryIds’i biz set edeceğiz)
+    default EditorsPickResponse toEditorsPickResponse(EditorsPick e) {
+        var ids = (e.getCategories() == null)
+                ? java.util.List.<java.util.UUID>of()
+                : e.getCategories().stream()
+                .map(Category::getId)
+                .toList();
+        return new EditorsPickResponse(e.getId(), e.getKey(), ids);
+        // record: (UUID id, String key, List<UUID> categoryIds)
+    }
+
+    @IterableMapping(elementTargetType = EditorsPickResponse.class)
+    java.util.List<EditorsPickResponse> toEditorsPickResponseList(java.util.List<EditorsPick> src);
 
     // Collection
     @Mapping(target = "id", ignore = true)

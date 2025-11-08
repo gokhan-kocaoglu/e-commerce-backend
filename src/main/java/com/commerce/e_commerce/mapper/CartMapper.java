@@ -34,8 +34,8 @@ public interface CartMapper {
                 variant.getSku(),
                 product.getTitle(),
                 i.getQuantity(),
-                MoneyDto.tryL(i.getUnitPriceCents()),
-                MoneyDto.tryL((long) i.getUnitPriceCents() * i.getQuantity()),
+                CommonMapperStatics.centsToUsd(i.getUnitPriceCents()),
+                CommonMapperStatics.centsToUsd((long) i.getUnitPriceCents() * i.getQuantity()),
                 thumbnail
         );
     }

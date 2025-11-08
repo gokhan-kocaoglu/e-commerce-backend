@@ -2,10 +2,13 @@ package com.commerce.e_commerce.mapper;
 
 import com.commerce.e_commerce.domain.catalog.*;
 import com.commerce.e_commerce.dto.catalog.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mapstruct.*;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Mapper(config = MapstructConfig.class, uses = { CommonMapper.class })
 public interface CatalogMapper {
@@ -54,6 +57,9 @@ public interface CatalogMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    // BigDecimal -> cents
+    @Mapping(target = "priceCents", source = "price", qualifiedByName = "bigDecimalToCents")
+    @Mapping(target = "compareAtPriceCents", source = "compareAtPrice", qualifiedByName = "bigDecimalToCents")
     Product toProduct(ProductCreateRequest dto);
 
     @AfterMapping
@@ -75,22 +81,21 @@ public interface CatalogMapper {
     @Mapping(target = "title", source = "title")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "slug", source = "slug")
-    @Mapping(target = "compareAtPriceCents", source = "compareAtPriceCents")
-    @Mapping(target = "priceCents", source = "priceCents")
+    // BigDecimal -> cents
+    @Mapping(target = "priceCents", source = "price", qualifiedByName = "bigDecimalToCents")
+    @Mapping(target = "compareAtPriceCents", source = "compareAtPrice", qualifiedByName = "bigDecimalToCents")
     void updateProduct(@MappingTarget Product entity, ProductUpdateRequest dto);
     // categoryId/brandId/imageUrls -> serviste handle
 
 
     // =======================
-    // Product -> Responses
-    // (Metrikler ProductMetrics'ten gelir)
+    // Product -> Responses (metrics dahil)
     // =======================
-
-    // Tam detaylı ürün cevabı (metrics dahil)
     @Mapping(target = "id", source = "product.id")
-    @Mapping(target = "price", source = "product.priceCents")
-    @Mapping(target = "compareAtPrice", source = "product.compareAtPriceCents")
-    @Mapping(target = "images", expression = "java(toImageResponses(product.getImages()))")
+    // cents -> MoneyDto(USD)
+    @Mapping(target = "price", source = "product.priceCents", qualifiedByName = "centsToUsdMoney")
+    @Mapping(target = "compareAtPrice", source = "product.compareAtPriceCents", qualifiedByName = "centsToUsdMoney")
+    @Mapping(target = "images", expression = "java(toProductResponseImages(product.getImages()))")
     @Mapping(target = "categoryId", source = "product.category.id")
     @Mapping(target = "brandId", source = "product.brand.id")
     @Mapping(target = "ratingAvg", expression = "java(metrics != null ? metrics.getRatingAvg() : 0.0)")
@@ -100,7 +105,9 @@ public interface CatalogMapper {
 
     // Liste öğesi (thumbnail + temel metrikler)
     @Mapping(target = "id", source = "product.id")
-    @Mapping(target = "price", source = "product.priceCents")
+    // cents -> MoneyDto(USD)
+    @Mapping(target = "price", source = "product.priceCents", qualifiedByName = "centsToUsdMoney")
+    @Mapping(target = "compareAtPrice", source = "product.compareAtPriceCents", qualifiedByName = "centsToUsdMoney")
     @Mapping(target = "categoryId", source = "product.category.id")
     @Mapping(target = "ratingAvg", expression = "java(metrics != null ? metrics.getRatingAvg() : 0.0)")
     @Mapping(target = "ratingCount", expression = "java(metrics != null ? metrics.getRatingCount() : 0)")
@@ -108,7 +115,7 @@ public interface CatalogMapper {
     @Mapping(target = "thumbnailUrl", expression = "java(firstImageUrl(product))")
     ProductListItemResponse toProductListItem(Product product, ProductMetrics metrics);
 
-    // Eğer bazı yerlerde metrikleri getiremiyorsan, overload’lar (metrics null) için aşağıdakiler işini görür:
+    // metrics null overload'lar
     default ProductResponse toProductResponse(Product product) {
         return toProductResponse(product, null);
     }
@@ -125,15 +132,20 @@ public interface CatalogMapper {
                 .findFirst().orElse(null);
     }
 
-    // Helper: görsel DTO listesi
-    default List<ProductImageResponse> toImageResponses(List<ProductImage> images) {
-        if (images == null) return List.of();
+    default java.util.List<ProductResponse.Image> toProductResponseImages(java.util.List<ProductImage> images) {
+        if (images == null || images.isEmpty()) return java.util.List.of();
         return images.stream()
-                .sorted(Comparator.comparingInt(ProductImage::getSortOrder))
-                .map(img -> new ProductImageResponse(
-                        img.getId(), img.getUrl(), img.getAltText(), img.getSortOrder()
-                )).toList();
+                .sorted(java.util.Comparator.comparingInt(ProductImage::getSortOrder))
+                .map(img -> new ProductResponse.Image(
+                        img.getId(),
+                        img.getUrl(),
+                        img.getAltText(),
+                        img.getSortOrder()
+                ))
+                .toList();
     }
+
+    // Helper: görsel DTO listesi
 
 
     // =======================
@@ -158,19 +170,50 @@ public interface CatalogMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+// BigDecimal -> cents
+    @Mapping(target = "priceCents", source = "priceCents", qualifiedByName = "bigDecimalToCents")
+    @Mapping(target = "compareAtPriceCents", source = "compareAtPriceCents", qualifiedByName = "bigDecimalToCents")
+    @Mapping(target = "attributesJson", source = "attributes", qualifiedByName = "mapToJson")
     ProductVariant toVariant(VariantCreateRequest dto);
 
-    @BeanMapping(ignoreByDefault = true)
+    @BeanMapping(
+            ignoreByDefault = true,
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+    )
     @Mapping(target = "sku", source = "sku")
-    @Mapping(target = "priceCents", source = "priceCents")
-    @Mapping(target = "compareAtPriceCents", source = "compareAtPriceCents")
-    @Mapping(target = "attributesJson", source = "attributesJson")
+// BigDecimal -> cents
+    @Mapping(target = "priceCents", source = "priceCents", qualifiedByName = "bigDecimalToCents")
+    @Mapping(target = "compareAtPriceCents", source = "compareAtPriceCents", qualifiedByName = "bigDecimalToCents")
+    @Mapping(target = "attributesJson", source = "attributes", qualifiedByName = "mapToJson")
     void updateVariant(@MappingTarget ProductVariant entity, VariantUpdateRequest dto);
 
+    // cents -> MoneyDto(USD)
     @Mapping(target = "productId", source = "product.id")
-    @Mapping(target = "price", source = "priceCents")
-    @Mapping(target = "compareAtPrice", source = "compareAtPriceCents")
+    @Mapping(target = "priceCents", source = "priceCents", qualifiedByName = "centsToUsdMoney")
+    @Mapping(target = "compareAtPriceCents", source = "compareAtPriceCents", qualifiedByName = "centsToUsdMoney")
+    @Mapping(target = "attributes", source = "attributesJson", qualifiedByName = "jsonToMap")
     VariantResponse toVariantResponse(ProductVariant entity);
+
+    @Named("mapToJson")
+    default String mapToJson(Map<String, String> map) {
+        if (map == null) return null;
+        try {
+            return new ObjectMapper().writeValueAsString(map);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("attributes serialize failed", e);
+        }
+    }
+
+    @Named("jsonToMap")
+    default Map<String, String> jsonToMap(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            var type = new TypeReference<Map<String,String>>() {};
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, type);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("attributes parse failed", e);
+        }
+    }
 
 
     // =======================

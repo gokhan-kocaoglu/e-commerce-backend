@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CatalogMapper mapper;
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponse create(CategoryCreateRequest req) {
         if (categoryRepo.existsBySlugAndDeletedFalse(req.slug()))
             throw new ApiException("CATEGORY_SLUG_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
@@ -41,6 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponse update(UUID id, CategoryUpdateRequest req) {
         var entity = categoryRepo.findById(id)
                 .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND));
@@ -55,6 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(UUID id) {
         var entity = categoryRepo.findById(id)
                 .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND));
@@ -63,6 +67,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Transactional(readOnly = true)
     @Override
+    @PreAuthorize("permitAll()")
     public CategoryResponse get(UUID id) {
         var e = categoryRepo.findById(id)
                 .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND));
@@ -71,6 +76,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Transactional(readOnly = true)
     @Override
+    @PreAuthorize("permitAll()")
     public Page<CategoryResponse> list(Pageable pageable) {
         return categoryRepo.findAll(pageable).map(mapper::toCategoryResponse);
     }

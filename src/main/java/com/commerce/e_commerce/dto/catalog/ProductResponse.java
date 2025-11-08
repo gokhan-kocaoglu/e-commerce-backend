@@ -14,8 +14,10 @@ public record ProductResponse(
         UUID brandId,
         MoneyDto price,
         MoneyDto compareAtPrice,
-        List<ProductImageResponse> images,
+        List<Image> images,
         double ratingAvg,
         int ratingCount,
         double bestsellerScore
-) {}
+) {
+    public record Image(UUID id, String url, String altText, int sortOrder) {}
+}

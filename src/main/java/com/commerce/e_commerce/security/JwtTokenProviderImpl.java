@@ -76,6 +76,19 @@ public class JwtTokenProviderImpl implements JwtTokenProvider {
         return UUID.fromString((String) claims.get("uid"));
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<String> getRoleNames(String token) {                 // <-- EKLENDİ
+        var claims = Jwts.parserBuilder().setSigningKey(key).build()
+                .parseClaimsJws(token).getBody();
+        Object raw = claims.get("roles");
+        if (raw == null) return List.of();
+        if (raw instanceof List<?> list) {
+            return list.stream().map(Object::toString).toList();
+        }
+        return List.of();
+    }
+
     @Override public Duration accessTokenTtl() { return accessTtl; }
     @Override public Duration refreshTokenTtl() { return refreshTtl; }
 }

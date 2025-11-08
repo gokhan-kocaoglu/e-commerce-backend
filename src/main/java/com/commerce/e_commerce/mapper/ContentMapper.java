@@ -50,9 +50,13 @@ public interface ContentMapper {
 
     CampaignResponse toCampaignResponse(Campaign e);
 
-    @BeanMapping(ignoreByDefault = true)
+    @BeanMapping(
+            ignoreByDefault = true
+            // , nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+    )
     @Mapping(target = "title", source = "title")
     @Mapping(target = "subtitle", source = "subtitle")
+    @Mapping(target = "description", source = "description")
     @Mapping(target = "imageUrl", source = "imageUrl")
     @Mapping(target = "ctaText", source = "ctaText")
     @Mapping(target = "ctaLink", source = "ctaLink")

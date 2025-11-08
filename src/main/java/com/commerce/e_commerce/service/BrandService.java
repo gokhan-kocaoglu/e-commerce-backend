@@ -5,6 +5,7 @@ import com.commerce.e_commerce.dto.catalog.BrandResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface BrandService {
@@ -12,5 +13,5 @@ public interface BrandService {
     BrandResponse update(UUID id, BrandRequest req);
     void delete(UUID id);
     BrandResponse get(UUID id);
-    Page<BrandResponse> list(Pageable pageable);
+    List<BrandResponse> listAll();
 }

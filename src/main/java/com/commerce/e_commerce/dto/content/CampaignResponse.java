@@ -7,6 +7,7 @@ public record CampaignResponse(
         UUID id,
         String title,
         String subtitle,
+        String description,
         String imageUrl,
         String ctaText,
         String ctaLink,

@@ -1,6 +1,6 @@
 package com.commerce.e_commerce.service;
 
-import com.commerce.e_commerce.domain.catalog.ProductMetrics;
+import com.commerce.e_commerce.domain.catalog.*;
 import com.commerce.e_commerce.dto.catalog.ProductCreateRequest;
 import com.commerce.e_commerce.dto.catalog.ProductListItemResponse;
 import com.commerce.e_commerce.dto.catalog.ProductResponse;
@@ -14,11 +14,13 @@ import com.commerce.e_commerce.repository.catalog.ProductRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.UUID;
 
 @Service
@@ -32,63 +34,114 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMetricsRepository metricsRepo;
     private final CatalogMapper mapper;
 
+    // ---------- CREATE ----------
     @Override
     public ProductResponse create(ProductCreateRequest req) {
-        var p = mapper.toProduct(req);
-        p.setCategory(categoryRepo.findById(req.categoryId())
-                .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND)));
+        // slug benzersizliği (soft-delete hariç)
+        if (req.slug() != null && productRepo.existsBySlugAndDeletedFalse(req.slug())) {
+            throw new ApiException("PRODUCT_SLUG_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
+        }
+
+        Product p = mapper.toProduct(req);
+
+        // kategori resolve
+        Category cat = categoryRepo.findById(req.categoryId())
+                .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND));
+        p.setCategory(cat);
+
+        // marka resolve (opsiyonel)
         if (req.brandId() != null) {
-            var b = brandRepo.findById(req.brandId())
-                    .orElseThrow(() -> new ApiException("brand_not_found", HttpStatus.NOT_FOUND));
+            Brand b = brandRepo.findById(req.brandId())
+                    .orElseThrow(() -> new ApiException("BRAND_NOT_FOUND", HttpStatus.NOT_FOUND));
             p.setBrand(b);
         }
+
+        // mapper.afterProductCreate image’ları set etti; ek kontrol (sort normalize)
+        normalizeImageSortOrders(p);
+
         productRepo.save(p);
 
-        // Metrics 1-1 oluştur (ratingAvg=0, sold=0)
-        var pm = new ProductMetrics();
+        // İlk metrikleri oluştur (0 değerlerle)
+        ProductMetrics pm = new ProductMetrics();
         pm.setProduct(p);
         metricsRepo.save(pm);
 
-        return mapper.toProductResponse(p);
+        return mapper.toProductResponse(p, pm);
     }
 
+    // ---------- UPDATE ----------
     @Override
     public ProductResponse update(UUID id, ProductUpdateRequest req) {
-        var p = productRepo.findById(id)
+        Product p = productRepo.findById(id)
                 .orElseThrow(() -> new ApiException("PRODUCT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // slug değişiyorsa benzersizlik kontrolü
+        if (req.slug() != null && !req.slug().equals(p.getSlug())
+                && productRepo.existsBySlugAndDeletedFalse(req.slug())) {
+            throw new ApiException("PRODUCT_SLUG_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
+        }
+
+        // temel alanları map et (BigDecimal fiyatlar mapper içinde cents’e çevrilecek)
         mapper.updateProduct(p, req);
 
+        // kategori / marka resolve (opsiyonel patch)
         if (req.categoryId() != null) {
-            p.setCategory(categoryRepo.findById(req.categoryId())
-                    .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND)));
+            Category cat = categoryRepo.findById(req.categoryId())
+                    .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND));
+            p.setCategory(cat);
         }
         if (req.brandId() != null) {
-            p.setBrand(brandRepo.findById(req.brandId())
-                    .orElseThrow(() -> new ApiException("BRAND_NOT_FOUND", HttpStatus.NOT_FOUND)));
+            Brand b = brandRepo.findById(req.brandId())
+                    .orElseThrow(() -> new ApiException("BRAND_NOT_FOUND", HttpStatus.NOT_FOUND));
+            p.setBrand(b);
         }
-        // imageUrls güncelleme ihtiyacı varsa servis içinde yönetebilirsin
-        return mapper.toProductResponse(p);
+
+        // görseller replace (isteğe bağlı)
+        if (req.imageUrls() != null) {
+            p.getImages().clear();
+            int i = 0;
+            for (String url : req.imageUrls()) {
+                if (url == null || url.isBlank()) continue;
+                ProductImage img = new ProductImage();
+                img.setProduct(p);
+                img.setUrl(url);
+                img.setSortOrder(i++);
+                p.getImages().add(img);
+            }
+        }
+        normalizeImageSortOrders(p);
+
+        // mevcut metrikleri çek (varsa)
+        ProductMetrics pm = metricsRepo.findByProductId(p.getId()).orElse(null);
+
+        return mapper.toProductResponse(p, pm);
     }
 
+    // ---------- DELETE ----------
     @Override
     public void delete(UUID id) {
-        var p = productRepo.findById(id)
+        Product p = productRepo.findById(id)
                 .orElseThrow(() -> new ApiException("PRODUCT_NOT_FOUND", HttpStatus.NOT_FOUND));
-        productRepo.delete(p);
+        productRepo.delete(p); // SoftDelete devrede
     }
 
+    // ---------- READ ----------
     @Transactional(readOnly = true)
     @Override
     public ProductResponse getBySlug(String slug) {
-        var p = productRepo.findBySlugAndDeletedFalse(slug)
+        Product p = productRepo.findBySlugAndDeletedFalse(slug)
                 .orElseThrow(() -> new ApiException("PRODUCT_NOT_FOUND", HttpStatus.NOT_FOUND));
-        return mapper.toProductResponse(p);
+        ProductMetrics pm = metricsRepo.findByProductId(p.getId()).orElse(null);
+        return mapper.toProductResponse(p, pm);
     }
+
+
 
     @Transactional(readOnly = true)
     @Override
     public Page<ProductListItemResponse> list(Pageable pageable) {
-        return productRepo.findAllOrderByScore(pageable).map(mapper::toProductListItem);
+        return productRepo.findAllOrderByScore(pageable)
+                .map(mapper::toProductListItem);
     }
 
     @Transactional(readOnly = true)
@@ -101,6 +154,37 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     @Override
     public Page<ProductListItemResponse> search(String q, UUID categoryId, Pageable pageable) {
-        return productRepo.search(q, categoryId, pageable).map(mapper::toProductListItem);
+        return productRepo.search(q, categoryId, pageable)
+                .map(mapper::toProductListItem);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public java.util.List<ProductListItemResponse> topBestsellers(int limit) {
+        int lim = Math.max(1, Math.min(limit, 50)); // güvenli sınır: 1..50
+        var page = metricsRepo.findTopByBestseller(PageRequest.of(0, lim));
+        return page.getContent().stream()
+                .map(pm -> mapper.toProductListItem(pm.getProduct(), pm))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ProductResponse getProduct(UUID id) {
+        Product p = productRepo.findById(id)
+                .orElseThrow(() -> new ApiException("PRODUCT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        ProductMetrics pm = metricsRepo.findByProductId(p.getId()).orElse(null);
+        return mapper.toProductResponse(p, pm);
+    }
+
+    // ---------- helpers ----------
+    private void normalizeImageSortOrders(Product p) {
+        if (p.getImages() == null || p.getImages().isEmpty()) return;
+        p.getImages().sort(Comparator.comparingInt(ProductImage::getSortOrder));
+        int idx = 0;
+        for (ProductImage img : p.getImages()) {
+            img.setSortOrder(idx++);
+            img.setProduct(p);
+        }
     }
 }
