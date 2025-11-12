@@ -7,10 +7,7 @@ import com.commerce.e_commerce.domain.marketing.Coupon;
 import com.commerce.e_commerce.domain.marketing.EditorsPick;
 import com.commerce.e_commerce.dto.content.EditorsPickRequest;
 import com.commerce.e_commerce.dto.content.EditorsPickResponse;
-import com.commerce.e_commerce.dto.marketing.CollectionRequest;
-import com.commerce.e_commerce.dto.marketing.CollectionResponse;
-import com.commerce.e_commerce.dto.marketing.CouponRequest;
-import com.commerce.e_commerce.dto.marketing.CouponResponse;
+import com.commerce.e_commerce.dto.marketing.*;
 import org.mapstruct.*;
 
 import java.util.List;
@@ -116,4 +113,25 @@ public interface MarketingMapper {
     @Mapping(target = "endsAt", source = "endsAt")
     @Mapping(target = "usageLimit", source = "usageLimit")
     void updateCoupon(@MappingTarget Coupon e, CouponRequest req);
+
+    default CollectionSummaryResponse toCollectionSummary(com.commerce.e_commerce.domain.marketing.Collection e, long itemCount) {
+        return new CollectionSummaryResponse(
+                e.getId(),
+                e.getName(),
+                e.getSlug(),
+                e.getShortDescription(),
+                e.getCtaText(),
+                e.getHeroImageUrl(),
+                itemCount
+        );
+    }
+
+    default CollectionItemResponse toCollectionItemResponse(com.commerce.e_commerce.domain.marketing.CollectionItem ci) {
+        return new CollectionItemResponse(
+                ci.getId(),
+                ci.getProduct() != null ? ci.getProduct().getId() : null,
+                ci.getSortOrder(),
+                ci.getImageUrl()
+        );
+    }
 }

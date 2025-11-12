@@ -12,7 +12,9 @@ import com.commerce.e_commerce.repository.security.RoleRepository;
 import com.commerce.e_commerce.repository.security.UserRepository;
 import com.commerce.e_commerce.repository.customer.UserDetailRepository;   // <-- eklendi
 import com.commerce.e_commerce.security.JwtTokenProvider;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor(onConstructor_ = @__(@Autowired))
 @Transactional
 public class AuthServiceImpl implements AuthService {
 

@@ -13,7 +13,7 @@ import java.util.*;
 @Getter @Setter
 public class User extends SoftDeletable {
 
-    @NaturalId
+    @NaturalId(mutable = true)
     @Column(nullable = false, length = 180)
     private String email;
 

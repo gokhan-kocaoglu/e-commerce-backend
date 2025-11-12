@@ -35,6 +35,7 @@ public interface SecurityMapper {
     @Mapping(target = "email", source = "user.email")
     @Mapping(target = "firstName", source = "detail.firstName")
     @Mapping(target = "lastName",  source = "detail.lastName")
+    @Mapping(target = "phone",  source = "detail.phone")
     @Mapping(target = "avatarUrl", source = "detail.avatarUrl")
     @Mapping(target = "roles", expression = "java(toRoleNames(user.getRoles()))")
     UserResponse toUserResponse(User user, UserDetail detail);

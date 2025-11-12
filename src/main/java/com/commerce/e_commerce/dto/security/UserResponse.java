@@ -9,5 +9,6 @@ public record UserResponse(
         String firstName,
         String lastName,
         String avatarUrl,
+        String phone,
         List<String> roles
 ) {}
