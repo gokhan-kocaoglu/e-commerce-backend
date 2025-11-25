@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -186,5 +187,19 @@ public class ProductServiceImpl implements ProductService {
             img.setSortOrder(idx++);
             img.setProduct(p);
         }
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProductListItemResponse> topBestsellersByCategory(UUID categoryId, int limit) {
+        // Kategori mevcut mu? (404 ile netleştiriyoruz)
+        categoryRepo.findById(categoryId)
+                .orElseThrow(() -> new ApiException("CATEGORY_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        int lim = Math.max(1, Math.min(limit, 50)); // 1..50 güvenli sınır
+        var page = metricsRepo.findTopByBestsellerInCategory(categoryId, PageRequest.of(0, lim));
+        return page.getContent().stream()
+                .map(pm -> mapper.toProductListItem(pm.getProduct(), pm))
+                .toList();
     }
 }

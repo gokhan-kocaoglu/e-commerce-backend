@@ -22,6 +22,7 @@ public interface ProductService {
     Page<ProductListItemResponse> search(String q, UUID categoryId, Pageable pageable);
 
     List<ProductListItemResponse> topBestsellers(int limit);
+    List<ProductListItemResponse> topBestsellersByCategory(UUID categoryId, int limit);
 
     ProductResponse getProduct (UUID id);
 }

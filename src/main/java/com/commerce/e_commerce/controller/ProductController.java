@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -98,10 +99,13 @@ public class ProductController {
 
     // /api/catalog/products/top-bestsellers?limit=8
     @GetMapping("/top-bestsellers")
-    public ResponseEntity<ApiResponse<java.util.List<ProductListItemResponse>>> topBestsellers(
+    public ResponseEntity<ApiResponse<java.util.List<ProductListItemResponse>>> topBestsellersFlexible(
+            @RequestParam(required = false) UUID categoryId,
             @RequestParam(defaultValue = "8") int limit
     ) {
-        var list = productService.topBestsellers(limit);
+        var list = (categoryId == null)
+                ? productService.topBestsellers(limit)
+                : productService.topBestsellersByCategory(categoryId, limit);
         return ResponseEntity.ok(ApiResponse.ok(list));
     }
 }

@@ -28,4 +28,14 @@ public interface ProductMetricsRepository extends JpaRepository<ProductMetrics, 
            order by pm.bestsellerScore desc
            """)
     Page<ProductMetrics> findTopByBestseller(Pageable pageable);
+
+    @Query("""
+        select pm
+        from ProductMetrics pm
+        join pm.product p
+        where p.deleted = false
+          and p.category.id = :categoryId
+        order by pm.bestsellerScore desc, pm.ratingAvg desc
+    """)
+    Page<ProductMetrics> findTopByBestsellerInCategory(@Param("categoryId") UUID categoryId, Pageable pageable);
 }
