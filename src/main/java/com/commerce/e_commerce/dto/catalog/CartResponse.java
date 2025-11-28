@@ -3,6 +3,7 @@ package com.commerce.e_commerce.dto.catalog;
 import com.commerce.e_commerce.dto.common.MoneyDto;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public record CartResponse(
@@ -14,6 +15,7 @@ public record CartResponse(
             UUID variantId,
             String sku,
             String productTitle,
+            Map<String,String> attributes,
             int quantity,
             MoneyDto unitPrice,
             MoneyDto lineTotal,

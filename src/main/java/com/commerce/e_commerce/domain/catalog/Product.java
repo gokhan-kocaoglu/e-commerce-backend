@@ -4,6 +4,7 @@ import com.commerce.e_commerce.domain.common.SoftDeletable;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Fetch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,5 +29,6 @@ public class Product extends SoftDeletable {
     @Column private Long compareAtPriceCents;            // indirim öncesi
 
     @OneToMany(mappedBy="product", cascade=CascadeType.ALL, orphanRemoval=true)
+    @Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<ProductImage> images = new ArrayList<>();
 }

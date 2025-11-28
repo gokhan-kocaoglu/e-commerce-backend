@@ -15,4 +15,7 @@ public class CartItem extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional=false) private ProductVariant variant;
     @Column(nullable=false) private int quantity;
     @Column(nullable=false) private Long unitPriceCents; // o anki fiyat
+    @Column(length=120) private String skuSnapshot;
+    @Column(length=200) private String productTitleSnapshot;
+    @Column(length=400) private String attributesJsonSnapshot;
 }

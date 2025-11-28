@@ -77,6 +77,9 @@ public class SecurityConfig {
                         // Vitrin GET'leri (anonim erişim)
                         .requestMatchers(HttpMethod.GET, "/api/catalog/**", "/api/content/**", "/api/marketing/**").permitAll()
 
+                        //Sepet tüm uçlar açık
+                        .requestMatchers("/api/cart/**").authenticated()
+
                         // --- YÖNETİM/YAZMA OPERASYONLARI SADECE ADMIN ---
                         .requestMatchers(HttpMethod.POST,   "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
