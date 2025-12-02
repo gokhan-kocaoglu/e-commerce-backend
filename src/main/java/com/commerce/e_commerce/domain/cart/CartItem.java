@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Entity
 @Table(name="cart_item", indexes=@Index(name="idx_ci_cart", columnList="cart_id"))
 @Getter
@@ -18,4 +20,6 @@ public class CartItem extends BaseEntity {
     @Column(length=120) private String skuSnapshot;
     @Column(length=200) private String productTitleSnapshot;
     @Column(length=400) private String attributesJsonSnapshot;
+    @Column(name = "product_id_snapshot")
+    private UUID productIdSnapshot;
 }

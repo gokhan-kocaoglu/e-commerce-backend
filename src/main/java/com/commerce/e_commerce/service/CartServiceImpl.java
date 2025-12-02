@@ -78,9 +78,10 @@ public class CartServiceImpl implements CartService {
 
             // snapshot
             line.setUnitPriceCents(variant.getPriceCents());
-            line.setSkuSnapshot(variant.getSku());
+            line.setSkuSnapshot(variant.getProduct().getSlug());
             line.setProductTitleSnapshot(variant.getProduct().getTitle());
             line.setAttributesJsonSnapshot(variant.getAttributesJson());
+            line.setProductIdSnapshot(variant.getProduct().getId());
 
             line.setQuantity(0);
 

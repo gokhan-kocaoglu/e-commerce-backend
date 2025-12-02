@@ -12,6 +12,7 @@ public record CartResponse(
         PriceSummary summary
 ) {
     public record CartLine(
+            UUID productId,
             UUID variantId,
             String sku,
             String productTitle,

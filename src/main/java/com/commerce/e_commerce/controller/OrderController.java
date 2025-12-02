@@ -5,6 +5,7 @@ import com.commerce.e_commerce.dto.common.ApiResponse;
 import com.commerce.e_commerce.dto.order.OrderCancelRequest;
 import com.commerce.e_commerce.dto.order.OrderCreateRequest;
 import com.commerce.e_commerce.dto.order.OrderResponse;
+import com.commerce.e_commerce.dto.order.PaymentCaptureRequest;
 import com.commerce.e_commerce.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,14 @@ public class OrderController {
                                                              @Valid @RequestBody OrderCreateRequest req) {
         UUID userId = (UUID) auth.getPrincipal();
         return ResponseEntity.ok(ApiResponse.ok(orderService.create(userId, req)));
+    }
+
+    @PostMapping("/{orderId}/capture")
+    public ResponseEntity<ApiResponse<OrderResponse>> capture(Authentication auth,
+                                                              @PathVariable UUID orderId,
+                                                              @Valid @RequestBody PaymentCaptureRequest req) {
+        UUID userId = (UUID) auth.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.ok(orderService.capture(userId, orderId, req)));
     }
 
     @PostMapping("/{orderId}/cancel")

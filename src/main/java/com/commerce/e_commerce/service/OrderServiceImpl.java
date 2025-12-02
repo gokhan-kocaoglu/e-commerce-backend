@@ -1,21 +1,23 @@
 package com.commerce.e_commerce.service;
 
 import com.commerce.e_commerce.domain.common.enums.OrderStatus;
-import com.commerce.e_commerce.domain.inventory.StockReservation;
+import com.commerce.e_commerce.domain.common.enums.PaymentStatus;
 import com.commerce.e_commerce.domain.order.Order;
 import com.commerce.e_commerce.domain.order.OrderItem;
-import com.commerce.e_commerce.domain.security.User;
+import com.commerce.e_commerce.domain.order.Payment;
+import com.commerce.e_commerce.dto.inventory.ReservationRequest;
 import com.commerce.e_commerce.dto.order.OrderCancelRequest;
 import com.commerce.e_commerce.dto.order.OrderCreateRequest;
 import com.commerce.e_commerce.dto.order.OrderResponse;
+import com.commerce.e_commerce.dto.order.PaymentCaptureRequest;
 import com.commerce.e_commerce.exceptions.ApiException;
 import com.commerce.e_commerce.mapper.OrderMapper;
 import com.commerce.e_commerce.repository.catalog.ProductVariantRepository;
-import com.commerce.e_commerce.repository.inventory.StockRepository;
-import com.commerce.e_commerce.repository.inventory.StockReservationRepository;
 import com.commerce.e_commerce.repository.order.OrderItemRepository;
 import com.commerce.e_commerce.repository.order.OrderRepository;
+import com.commerce.e_commerce.repository.order.PaymentRepository;
 import com.commerce.e_commerce.repository.security.UserRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,41 +38,30 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepo;
     private final OrderItemRepository orderItemRepo;
     private final ProductVariantRepository variantRepo;
-    private final StockRepository stockRepo;
-    private final StockReservationRepository reservationRepo;
     private final UserRepository userRepo;
     private final OrderMapper mapper;
 
+    private final InventoryService inventory;      // rezervasyon/commit/release
+    private final PaymentRepository paymentRepo;   // idempotency
+    private final EntityManager em;
+
     @Override
     public OrderResponse create(UUID userId, OrderCreateRequest req) {
-        if (req.items() == null || req.items().isEmpty()) {
+        if (req.items() == null || req.items().isEmpty())
             throw new ApiException("ORDER_ITEMS_EMPTY", HttpStatus.BAD_REQUEST);
-        }
-        if (!userRepo.existsById(userId)) {
+        if (!userRepo.existsById(userId))
             throw new ApiException("USER_NOT_FOUND", HttpStatus.NOT_FOUND);
-        }
 
         var order = new Order();
         order.setUser(userRepo.getReferenceById(userId));
         order.setStatus(OrderStatus.CREATED);
 
-        long itemsTotal = 0;
+        long itemsTotal = 0L;
 
-        // stok kontrol + rezervasyon + kalem ekleme
+        // Kalemler + snapshot + tutarlar
         for (var it : req.items()) {
             var v = variantRepo.findById(it.variantId())
                     .orElseThrow(() -> new ApiException("VARIANT_NOT_FOUND", HttpStatus.NOT_FOUND));
-
-            var st = stockRepo.findByVariantId(v.getId())
-                    .orElseThrow(() -> new ApiException("STOCK_NOT_TRACKED", HttpStatus.BAD_REQUEST));
-
-            int available = st.getQuantityOnHand() - st.getQuantityReserved();
-            if (available < it.quantity()) {
-                throw new ApiException("OUT_OF_STOCK", HttpStatus.BAD_REQUEST);
-            }
-
-            // rezervasyon artır
-            st.setQuantityReserved(st.getQuantityReserved() + it.quantity());
 
             var oi = new OrderItem();
             oi.setOrder(order);
@@ -83,35 +74,77 @@ public class OrderServiceImpl implements OrderService {
             order.getItems().add(oi);
 
             itemsTotal += oi.getLineTotalCents();
-
-            var res = new StockReservation();
-            res.setOrder(order);
-            res.setVariant(v);
-            res.setReservedQty(it.quantity());
-            reservationRepo.save(res);
         }
 
-        // tutarlar (örnek)
+        long shipping = itemsTotal >= 50_000L ? 0L : 2_990L;
+        long discount = 0L; // kupon uygularsan burada hesaplayıp yaz
+        long tax = Math.round(itemsTotal * 0.18);
+        long grand = itemsTotal + shipping - discount + tax;
+
         order.setItemsTotalCents(itemsTotal);
-
-        long shipping = (itemsTotal >= 50_000L) ? 0L : 2_990L;   // ← L kullandık
-        long discount = 0L;                                     // kupon uygularsan hesapla
-        long tax = Math.round(itemsTotal * 0.18);               // Math.round -> long
-
         order.setShippingCents(shipping);
-        order.setDiscountCents(discount); // kupon uygularsan burada hesapla
-        order.setTaxCents(Math.round(itemsTotal * 0.18));
-        order.setGrandTotalCents(
-                order.getItemsTotalCents() + order.getShippingCents()
-                        - order.getDiscountCents() + order.getTaxCents()
-        );
+        order.setDiscountCents(discount);
+        order.setTaxCents(tax);
+        order.setGrandTotalCents(grand);
 
-        // adres snapshot
+        // Adres snapshot
         order.setShippingAddressJson(JsonUtil.toJson(req.shippingAddress()));
-        order.setBillingAddressJson(JsonUtil.toJson(Optional.ofNullable(req.billingAddress()).orElse(req.shippingAddress())));
+        order.setBillingAddressJson(JsonUtil.toJson(
+                Optional.ofNullable(req.billingAddress()).orElse(req.shippingAddress())
+        ));
 
+        // ID kesinleşsin
         orderRepo.save(order);
-        // OrderItem'lar cascade ile kaydolur; istersen explicit save de kalabilir
+        em.flush();
+
+        // ---- STOK REZERVASYON ----
+        var rr = new ReservationRequest(
+                order.getId(),
+                req.items().stream()
+                        .map(i -> new ReservationRequest.Item(i.variantId(), i.quantity()))
+                        .toList()
+        );
+        var res = inventory.reserve(rr);
+        if (!res.success()) {
+            throw new ApiException(res.message(), HttpStatus.BAD_REQUEST);
+        }
+
+        // Ödeme bekleme
+        order.setStatus(OrderStatus.PENDING_PAYMENT);
+
+        return mapper.toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse capture(UUID userId, UUID orderId, PaymentCaptureRequest req) {
+        var order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new ApiException("ORDER_NOT_FOUND", HttpStatus.NOT_FOUND));
+        if (!order.getUser().getId().equals(userId))
+            throw new ApiException("FORBIDDEN", HttpStatus.FORBIDDEN);
+
+        // Idempotency: aynı providerRef geldiyse tekrar kayıt alma
+        if (req.providerRef() != null && paymentRepo.existsByProviderRef(req.providerRef())) {
+            return mapper.toOrderResponse(order); // zaten işlenmiş kabul
+        }
+
+        // 1) stok düşümü (reserved → onHand)
+        inventory.consumeAll(orderId); // wrapper → consumeAll
+
+        // 2) ödeme kaydı
+        var p = new Payment();
+        p.setOrder(order);
+        p.setStatus(PaymentStatus.CAPTURED);
+        p.setProvider(Optional.ofNullable(req.provider()).orElse("unknown"));
+        p.setProviderRef(req.providerRef());
+        p.setAmountCents(req.amountCents());
+        p.setPayload(Optional.ofNullable(req.payloadJson()).orElse("{}"));
+        // p.setCardSnapshotJson(Optional.ofNullable(req.cardSnapshotJson()).orElse(null));
+        paymentRepo.save(p);
+
+        // 3) sipariş durumu
+        order.setStatus(OrderStatus.PAID);
+
         return mapper.toOrderResponse(order);
     }
 
@@ -119,36 +152,29 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse cancel(UUID userId, UUID orderId, OrderCancelRequest req) {
         var order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new ApiException("ORDER_NOT_FOUND", HttpStatus.NOT_FOUND));
-
-        if (!order.getUser().getId().equals(userId)) {
+        if (!order.getUser().getId().equals(userId))
             throw new ApiException("FORBIDDEN", HttpStatus.FORBIDDEN);
-        }
-        // izin/iş kuralı: sadece CREATED/PENDING ödemeli siparişler iptal edilebilir
-        if (order.getStatus() == OrderStatus.CANCELED) {
-            return mapper.toOrderResponse(order); // idempotent
-        }
-        if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED) {
+
+        if (order.getStatus() == OrderStatus.CANCELED)
+            return mapper.toOrderResponse(order);
+        if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED)
             throw new ApiException("ORDER_ALREADY_IN_FULFILLMENT", HttpStatus.BAD_REQUEST);
+
+        // Ödeme henüz yoksa rezervasyonları bırak
+        if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.CREATED) {
+            inventory.releaseAll(orderId); // wrapper → releaseAll
         }
 
         order.setStatus(OrderStatus.CANCELED);
-
-        // rezervasyonları bırak
-        reservationRepo.findByOrderId(order.getId()).forEach(r -> {
-            var st = stockRepo.findByVariantId(r.getVariant().getId()).orElse(null);
-            if (st != null) st.setQuantityReserved(st.getQuantityReserved() - r.getReservedQty());
-            r.setReleased(true);
-        });
-
         return mapper.toOrderResponse(order);
     }
 
     @Transactional(readOnly = true)
     @Override
     public Page<OrderResponse> listMine(UUID userId, Pageable pageable) {
-        if (!userRepo.existsById(userId)) {
+        if (!userRepo.existsById(userId))
             throw new ApiException("USER_NOT_FOUND", HttpStatus.NOT_FOUND);
-        }
+
         return orderRepo.findByUserIdAndDeletedFalse(userId, pageable)
                 .map(mapper::toOrderResponse);
     }
@@ -157,7 +183,6 @@ public class OrderServiceImpl implements OrderService {
     static class JsonUtil {
         private static final com.fasterxml.jackson.databind.ObjectMapper om =
                 new com.fasterxml.jackson.databind.ObjectMapper();
-
         static String toJson(@NotNull Object o) {
             try { return om.writeValueAsString(o); }
             catch (Exception e) { return "{}"; }

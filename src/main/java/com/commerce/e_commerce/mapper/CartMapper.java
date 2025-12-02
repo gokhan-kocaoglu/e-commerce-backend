@@ -13,6 +13,7 @@ import org.mapstruct.Mapper;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Mapper(config = MapstructConfig.class, uses = { CommonMapper.class })
 public interface CartMapper {
@@ -36,7 +37,7 @@ public interface CartMapper {
     default CartResponse.CartLine toCartLine(CartItem i) {
         if (i == null) {
             return new CartResponse.CartLine(
-                    null, null, null, Map.of(), 0,
+                    null, null, null,null, Map.of(), 0,
                     CommonMapperStatics.centsToUsd(0L),
                     CommonMapperStatics.centsToUsd(0L),
                     null
@@ -47,6 +48,11 @@ public interface CartMapper {
         var product = (variant != null) ? variant.getProduct() : null;
 
         // 1) Snapshot -> fallback entity
+        UUID productId = i.getProductIdSnapshot();
+        if (productId == null && product != null) {
+            productId = product.getId();
+        }
+
         String sku = i.getSkuSnapshot();
         if ((sku == null || sku.isBlank()) && variant != null) {
             sku = variant.getSku();
@@ -69,6 +75,7 @@ public interface CartMapper {
         long lineCents = unitCents * (long) qty;
 
         return new CartResponse.CartLine(
+                productId,
                 variant != null ? variant.getId() : null,
                 sku,
                 productTitle,

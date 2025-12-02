@@ -77,8 +77,20 @@ public class SecurityConfig {
                         // Vitrin GET'leri (anonim erişim)
                         .requestMatchers(HttpMethod.GET, "/api/catalog/**", "/api/content/**", "/api/marketing/**").permitAll()
 
+                        // INVENTORY — PUBLIC
+                        .requestMatchers(HttpMethod.GET, "/api/inventory/variants/*/stock").permitAll()
+
+                        // INVENTORY- Geçmiş
+                        .requestMatchers(HttpMethod.GET, "/api/inventory/variants/*/movements").authenticated()
+
+                        // INVENTORY — CHECKOUT (auth gerekli)
+                        .requestMatchers(HttpMethod.POST, "/api/inventory/reservations").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/inventory/reservations/*/release").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/inventory/reservations/*/consume").authenticated()
+
                         //Sepet tüm uçlar açık
                         .requestMatchers("/api/cart/**").authenticated()
+
 
                         // --- YÖNETİM/YAZMA OPERASYONLARI SADECE ADMIN ---
                         .requestMatchers(HttpMethod.POST,   "/api/catalog/**", "/api/content/**", "/api/marketing/**").hasRole("ADMIN")
