@@ -6,6 +6,8 @@ import com.commerce.e_commerce.domain.security.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +32,14 @@ public class Order extends SoftDeletable {
     @Column(nullable=false) private Long grandTotalCents;
 
     // snapshot adresler
-    @Column(columnDefinition="jsonb") private String shippingAddressJson;
-    @Column(columnDefinition="jsonb") private String billingAddressJson;
+    // snapshot adresler (jsonb)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private OrderAddressSnapshot shippingAddressJson;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private OrderAddressSnapshot billingAddressJson;
 
     @OneToMany(mappedBy="order", cascade=CascadeType.ALL, orphanRemoval=true)
     private List<OrderItem> items = new ArrayList<>();

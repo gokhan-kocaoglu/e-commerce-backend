@@ -5,6 +5,8 @@ import com.commerce.e_commerce.domain.common.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name="payment",
@@ -20,10 +22,20 @@ public class Payment extends BaseEntity {
     @Enumerated(EnumType.STRING) @Column(nullable=false)
     private PaymentStatus status;
 
-    @Column(nullable=false) private Long amountCents;
-    @Column(length=80) private String provider;        // iyzico/stripe/etc.
-    @Column(length=140) private String providerRef;    // transaction id
-    @Column(columnDefinition="jsonb") private String payload; // ham response
-    @Column(columnDefinition="jsonb")
-    private String cardSnapshotJson; // {brand,last4,expMonth,expYear,holder}
+    @Column(nullable=false)
+    private Long amountCents;
+
+    @Column(length=80)
+    private String provider;        // iyzico/stripe/etc.
+
+    @Column(length=140)
+    private String providerRef;    // transaction id
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "payload", columnDefinition = "jsonb")
+    private CardSnapshot payload; // ham response
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "card_snapshot_json", columnDefinition = "jsonb")
+    private CardSnapshot cardSnapshotJson;
 }

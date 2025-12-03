@@ -2,9 +2,7 @@ package com.commerce.e_commerce.service;
 
 import com.commerce.e_commerce.domain.common.enums.OrderStatus;
 import com.commerce.e_commerce.domain.common.enums.PaymentStatus;
-import com.commerce.e_commerce.domain.order.Order;
-import com.commerce.e_commerce.domain.order.OrderItem;
-import com.commerce.e_commerce.domain.order.Payment;
+import com.commerce.e_commerce.domain.order.*;
 import com.commerce.e_commerce.dto.inventory.ReservationRequest;
 import com.commerce.e_commerce.dto.order.OrderCancelRequest;
 import com.commerce.e_commerce.dto.order.OrderCreateRequest;
@@ -88,9 +86,31 @@ public class OrderServiceImpl implements OrderService {
         order.setGrandTotalCents(grand);
 
         // Adres snapshot
-        order.setShippingAddressJson(JsonUtil.toJson(req.shippingAddress()));
-        order.setBillingAddressJson(JsonUtil.toJson(
-                Optional.ofNullable(req.billingAddress()).orElse(req.shippingAddress())
+        var ship = req.shippingAddress();
+        if (ship == null) {
+            throw new ApiException("SHIPPING_ADDRESS_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+
+        order.setShippingAddressJson(new OrderAddressSnapshot(
+                ship.fullName(),
+                ship.line1(),
+                ship.line2(),
+                ship.city(),
+                ship.state(),
+                ship.postalCode(),
+                ship.countryCode()
+        ));
+
+        var bill = Optional.ofNullable(req.billingAddress()).orElse(ship);
+
+        order.setBillingAddressJson(new OrderAddressSnapshot(
+                bill.fullName(),
+                bill.line1(),
+                bill.line2(),
+                bill.city(),
+                bill.state(),
+                bill.postalCode(),
+                bill.countryCode()
         ));
 
         // ID kesinleşsin
@@ -138,8 +158,15 @@ public class OrderServiceImpl implements OrderService {
         p.setProvider(Optional.ofNullable(req.provider()).orElse("unknown"));
         p.setProviderRef(req.providerRef());
         p.setAmountCents(req.amountCents());
-        p.setPayload(Optional.ofNullable(req.payloadJson()).orElse("{}"));
-        // p.setCardSnapshotJson(Optional.ofNullable(req.cardSnapshotJson()).orElse(null));
+        // FE'den gelen ham JSON string
+        String payloadJson = Optional.ofNullable(req.payloadJson()).orElse("{}");
+
+        // JSON string → CardSnapshot objesi
+        CardSnapshot snapshot = JsonUtil.fromJson(payloadJson, CardSnapshot.class);
+
+        // Aynı objeyi hem payload, hem cardSnapshotJson'a yaz
+        p.setPayload(snapshot);
+        p.setCardSnapshotJson(snapshot);
         paymentRepo.save(p);
 
         // 3) sipariş durumu
@@ -183,9 +210,19 @@ public class OrderServiceImpl implements OrderService {
     static class JsonUtil {
         private static final com.fasterxml.jackson.databind.ObjectMapper om =
                 new com.fasterxml.jackson.databind.ObjectMapper();
+
         static String toJson(@NotNull Object o) {
             try { return om.writeValueAsString(o); }
             catch (Exception e) { return "{}"; }
+        }
+
+        static <T> T fromJson(String json, Class<T> type) {
+            if (json == null || json.isBlank()) return null;
+            try {
+                return om.readValue(json, type);
+            } catch (Exception e) {
+                return null; // istersen log da atabilirsin
+            }
         }
     }
 }
