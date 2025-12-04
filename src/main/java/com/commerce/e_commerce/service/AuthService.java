@@ -8,6 +8,7 @@ public interface AuthService {
     AuthResponse register(UserRegisterRequest request);
     AuthResponse login(UserLoginRequest request);
     AuthResponse refresh(AuthRefreshRequest request);
-    void logout(UUID userId, String refreshToken); // opsiyonel: refresh revoke
+    void logout(UUID userId, String refreshToken);
+    void logoutAll(UUID userId);
     UserResponse me(UUID userId);
 }

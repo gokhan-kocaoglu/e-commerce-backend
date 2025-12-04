@@ -169,4 +169,21 @@ public class CartServiceImpl implements CartService {
                 CommonMapperStatics.centsToUsd(grand)
         );
     }
+
+    @Override
+    public void clearCartAfterOrder(UUID userId) {
+        if (userId == null) return;
+
+        var cartOpt = cartRepo.findWithItemsByUserIdAndDeletedFalse(userId);
+
+        cartOpt.ifPresent(cart -> {
+            // Tüm satırları temizle -> orphanRemoval = true olduğu için
+            // cart_item kayıtları da silinecek.
+            cart.getItems().clear();
+
+            // İstersen burada save çağırabilirsin ama @Transactional olduğu için
+            // genelde gerek yok, commit’te flush edilir:
+            // cartRepo.save(cart);
+        });
+    }
 }

@@ -13,4 +13,5 @@ public interface CartService {
     CartResponse removeItem(UUID userId, UUID variantId);
     CartResponse applyCoupon(UUID userId, CartCouponRequest req);
     CartResponse clearCoupon(UUID userId);
+    void clearCartAfterOrder(UUID userId);
 }

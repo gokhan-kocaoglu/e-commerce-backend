@@ -115,6 +115,11 @@ public class AuthServiceImpl implements AuthService {
                 : securityMapper.toUserResponse(user);
     }
 
+    @Override
+    public void logoutAll(UUID userId) {
+        refreshTokenRepo.revokeAllActiveByUserId(userId);
+    }
+
     // --- helpers
     private AuthResponse issueTokens(User user) {
         String access  = jwtTokenProvider.generateAccessToken(user);

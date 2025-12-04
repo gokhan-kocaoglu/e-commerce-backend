@@ -14,4 +14,5 @@ public interface OrderService {
     OrderResponse capture(UUID userId, UUID orderId, PaymentCaptureRequest req);
     OrderResponse cancel(UUID userId, UUID orderId, OrderCancelRequest req);
     Page<OrderResponse> listMine(UUID userId, Pageable pageable);
+    OrderResponse getMineById(UUID userId, UUID orderId);
 }

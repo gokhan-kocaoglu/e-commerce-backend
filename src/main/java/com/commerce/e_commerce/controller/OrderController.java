@@ -56,4 +56,11 @@ public class OrderController {
         var dto = new ApiPage<>(p.getContent(), p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
         return ResponseEntity.ok(ApiResponse.ok(dto));
     }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOne(Authentication auth,
+                                                             @PathVariable UUID orderId) {
+        UUID userId = (UUID) auth.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.ok(orderService.getMineById(userId, orderId)));
+    }
 }

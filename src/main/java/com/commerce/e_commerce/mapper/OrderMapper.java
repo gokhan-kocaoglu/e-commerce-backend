@@ -1,6 +1,7 @@
 package com.commerce.e_commerce.mapper;
 
 import com.commerce.e_commerce.domain.order.Order;
+import com.commerce.e_commerce.domain.order.OrderAddressSnapshot;
 import com.commerce.e_commerce.domain.order.OrderItem;
 import com.commerce.e_commerce.dto.order.OrderResponse;
 import org.mapstruct.Mapper;
@@ -17,6 +18,8 @@ public interface OrderMapper {
     @Mapping(target = "discount", source = "discountCents",qualifiedByName = "centsToUsdMoney")
     @Mapping(target = "tax", source = "taxCents",qualifiedByName = "centsToUsdMoney")
     @Mapping(target = "grandTotal", source = "grandTotalCents",qualifiedByName = "centsToUsdMoney")
+    @Mapping(target = "shippingAddress", expression = "java(toAddress(order.getShippingAddressJson()))")
+    @Mapping(target = "billingAddress",  expression = "java(toAddress(order.getBillingAddressJson()))")
     OrderResponse toOrderResponse(Order order);
 
     default List<OrderResponse.OrderLine> toOrderLines(List<OrderItem> items) {
@@ -30,8 +33,23 @@ public interface OrderMapper {
                         // Aşağıdaki iki satır, CommonMapper.centsToUsdMoney(Long) ile aynı mantıkta olmalı.
                         // MapStruct default method içinde @Named kullanamadığımız için MoneyDto’yı doğrudan kuruyoruz.
                         CommonMapperStatics.centsToUsd(i.getUnitPriceCents()),
-                        CommonMapperStatics.centsToUsd(i.getLineTotalCents())
+                        CommonMapperStatics.centsToUsd(i.getLineTotalCents()),
+                        i.getProductImageUrlSnapshot(),
+                        i.getProductImageAltSnapshot()
                 )
         ).toList();
+    }
+
+    default OrderResponse.Address toAddress(OrderAddressSnapshot s) {
+        if (s == null) return null;
+        return new OrderResponse.Address(
+                s.getFullName(),
+                s.getLine1(),
+                s.getLine2(),
+                s.getCity(),
+                s.getState(),
+                s.getPostalCode(),
+                s.getCountryCode()
+        );
     }
 }

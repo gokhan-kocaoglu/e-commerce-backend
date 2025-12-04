@@ -20,4 +20,10 @@ public class OrderItem extends BaseEntity {
     @Column(nullable=false) private int quantity;
     @Column(nullable=false) private Long unitPriceCents;
     @Column(nullable=false) private Long lineTotalCents;
+
+    @Column(length = 500)
+    private String productImageUrlSnapshot;
+
+    @Column(length = 200)
+    private String productImageAltSnapshot;
 }

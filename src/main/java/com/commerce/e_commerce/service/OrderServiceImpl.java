@@ -41,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final InventoryService inventory;      // rezervasyon/commit/release
     private final PaymentRepository paymentRepo;   // idempotency
+    private final CartService cartService;
     private final EntityManager em;
 
     @Override
@@ -69,6 +70,8 @@ public class OrderServiceImpl implements OrderService {
             oi.setQuantity(it.quantity());
             oi.setUnitPriceCents(v.getPriceCents());
             oi.setLineTotalCents((long) v.getPriceCents() * it.quantity());
+            oi.setProductImageUrlSnapshot(resolveMainImageUrl(v));
+            oi.setProductImageAltSnapshot(resolveMainImageAlt(v));
             order.getItems().add(oi);
 
             itemsTotal += oi.getLineTotalCents();
@@ -172,6 +175,8 @@ public class OrderServiceImpl implements OrderService {
         // 3) sipariş durumu
         order.setStatus(OrderStatus.PAID);
 
+        cartService.clearCartAfterOrder(userId);
+
         return mapper.toOrderResponse(order);
     }
 
@@ -206,6 +211,20 @@ public class OrderServiceImpl implements OrderService {
                 .map(mapper::toOrderResponse);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getMineById(UUID userId, UUID orderId) {
+        // Kullanıcı var mı?
+        if (!userRepo.existsById(userId)) {
+            throw new ApiException("USER_NOT_FOUND", HttpStatus.NOT_FOUND);
+        }
+
+        var order = orderRepo.findDetailByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new ApiException("ORDER_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        return mapper.toOrderResponse(order);
+    }
+
     // ---- helper ----
     static class JsonUtil {
         private static final com.fasterxml.jackson.databind.ObjectMapper om =
@@ -225,4 +244,23 @@ public class OrderServiceImpl implements OrderService {
             }
         }
     }
+
+    private String resolveMainImageUrl(com.commerce.e_commerce.domain.catalog.ProductVariant v) {
+        // TODO: Product / ProductImage modeline göre implement et.
+        // Örnek pseudo:
+        var p = v.getProduct();
+        if (p != null && p.getImages() != null && !p.getImages().isEmpty()) {
+            return p.getImages().get(0).getUrl();
+        }
+        return null;
+    }
+
+    private String resolveMainImageAlt(com.commerce.e_commerce.domain.catalog.ProductVariant v) {
+        var p = v.getProduct();
+        if (p != null && p.getTitle() != null) {
+            return p.getTitle();
+        }
+        return "Product image";
+    }
+
 }
