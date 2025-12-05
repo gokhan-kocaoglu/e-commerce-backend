@@ -66,7 +66,6 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.getProduct(id)));
     }
 
-    // ?page=0&size=20
     @GetMapping
     public ResponseEntity<ApiResponse<ApiPage<ProductListItemResponse>>> list(
             @RequestParam(defaultValue="0") int page,

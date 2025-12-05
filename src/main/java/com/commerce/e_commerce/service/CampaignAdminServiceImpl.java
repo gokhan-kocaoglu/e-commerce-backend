@@ -26,7 +26,7 @@ public class CampaignAdminServiceImpl implements CampaignAdminService {
     @Override
     public CampaignResponse create(CampaignRequest req) {
         validateDates(req);
-        // Opsiyonel: title benzersizliği
+        // title benzersizliği
         if (req.title() != null && campaignRepo.existsByTitleAndDeletedFalse(req.title())) {
             throw new ApiException("CAMPAIGN_TITLE_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
         }
@@ -45,13 +45,13 @@ public class CampaignAdminServiceImpl implements CampaignAdminService {
 
         validateDates(req);
 
-        // title değişiyorsa çakışma kontrolü (opsiyonel)
+        // title değişiyorsa çakışma kontrolü
         if (req.title() != null && !req.title().equals(c.getTitle())
                 && campaignRepo.existsByTitleAndDeletedFalse(req.title())) {
             throw new ApiException("CAMPAIGN_TITLE_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
         }
 
-        mapper.updateCampaign(c, req); // null IGNORE istiyorsan mapper’a strateji ekle
+        mapper.updateCampaign(c, req);
         return mapper.toCampaignResponse(c);
     }
 

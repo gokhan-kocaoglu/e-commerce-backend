@@ -20,12 +20,12 @@ public class ProductDetail extends SoftDeletable {
     @Column(length = 1000)
     private String shortSummary;
 
-    // “Description” sekmesindeki zengin içerik bölümleri (başlık + metin + maddeler)
+    // “Description” sekmesindeki içerik bölümleri (başlık + metin + maddeler)
     @Column(name = "sections_json",columnDefinition="jsonb")
     @ColumnTransformer(write = "?::jsonb")
     private String sectionsJson;
 
-    // “Additional Information” (kargo, iade, bakım, malzeme vs) key-value
+    // “Additional Information” (kargo, iade, bakım, malzeme vs)
     @Column(name = "additional_info_json",columnDefinition="jsonb")
     @ColumnTransformer(write = "?::jsonb")
     private String additionalInfoJson;

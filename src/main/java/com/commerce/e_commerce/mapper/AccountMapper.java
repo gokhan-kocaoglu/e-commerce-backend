@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper(config = MapstructConfig.class)
 public interface AccountMapper {
 
-    // ---- UserDetail -> ProfileUpdateRequest (isteğe bağlı olarak kullanabilirsin)
+    // ---- UserDetail -> ProfileUpdateRequest (isteğe bağlı olarak kullanabilir)
     default ProfileUpdateRequest toProfileUpdateRequest(UserDetail d) {
         if (d == null) return null;
         return new ProfileUpdateRequest(d.getFirstName(), d.getLastName(), d.getPhone(), d.getAvatarUrl());
@@ -29,8 +29,8 @@ public interface AccountMapper {
     @Mapping(target="id", ignore = true)
     @Mapping(target="version", ignore = true)
     @Mapping(target="deleted", ignore = true)
-    @Mapping(target="user", ignore = true) // serviste set edilir
-    @Mapping(target="defaultShipping", ignore = true) // serviste mantıkla set edilir
+    @Mapping(target="user", ignore = true) // serviste set et
+    @Mapping(target="defaultShipping", ignore = true) // serviste mantıkla set et
     @Mapping(target="defaultBilling",  ignore = true)
     Address toAddress(AddressRequest req);
 

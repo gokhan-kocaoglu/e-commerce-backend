@@ -13,7 +13,7 @@ import java.time.Instant;
 @Setter
 public class Shipment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional=false) private Order order;
-    @Column(nullable=false, length=80) private String carrier;   // Yurtiçi/Aras...
+    @Column(nullable=false, length=80) private String carrier;
     @Column(length=120) private String trackingNumber;
     @Column(columnDefinition="jsonb") private String addressJson;
     private Instant shippedAt;

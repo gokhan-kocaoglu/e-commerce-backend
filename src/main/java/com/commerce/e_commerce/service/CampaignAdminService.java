@@ -9,8 +9,8 @@ import java.util.UUID;
 public interface CampaignAdminService {
     CampaignResponse create(CampaignRequest req);
     CampaignResponse update(UUID id, CampaignRequest req);
-    void delete(UUID id);                      // soft delete tetiklenir
-    CampaignResponse get(UUID id);             // tekil
-    List<CampaignResponse> listAll();          // admin listesi (opsiyonel)
+    void delete(UUID id);
+    CampaignResponse get(UUID id);
+    List<CampaignResponse> listAll();
 }
 

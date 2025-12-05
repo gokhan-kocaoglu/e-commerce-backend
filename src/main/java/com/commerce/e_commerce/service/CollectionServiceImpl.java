@@ -94,7 +94,7 @@ public class CollectionServiceImpl implements CollectionService {
         var ci = itemRepo.findByIdAndCollectionId(itemId, collectionId)
                 .orElseThrow(() -> new ApiException("COLLECTION_ITEM_NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        // product değişimine izin veriyorsan:
+        // product değişimine izin veriyorsak:
         if (req.productId() != null && !req.productId().equals(ci.getProduct().getId())) {
             var p = productRepo.findById(req.productId())
                     .orElseThrow(() -> new ApiException("PRODUCT_NOT_FOUND", HttpStatus.NOT_FOUND));

@@ -14,7 +14,7 @@ import java.time.Instant;
 @Getter
 @Setter
 public class Announcement extends SoftDeletable {
-    @Column(nullable=false, length=200) private String text; // "150₺ üzeri kargo bedava"
+    @Column(nullable=false, length=200) private String text;
     private Instant startsAt;
     private Instant endsAt;
     private boolean active = true;

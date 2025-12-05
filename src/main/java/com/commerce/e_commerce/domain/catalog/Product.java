@@ -24,9 +24,8 @@ public class Product extends SoftDeletable {
     @ManyToOne(fetch = FetchType.LAZY) private Category category;
     @ManyToOne(fetch = FetchType.LAZY) private Brand brand;
 
-    // Listeleme fiyatı (aktif fiyat ProductVariant'ta da olabilir)
-    @Column(nullable=false) private Long priceCents;     // integer para (kuruş)
-    @Column private Long compareAtPriceCents;            // indirim öncesi
+    @Column(nullable=false) private Long priceCents;
+    @Column private Long compareAtPriceCents;
 
     @OneToMany(mappedBy="product", cascade=CascadeType.ALL, orphanRemoval=true)
     @Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)

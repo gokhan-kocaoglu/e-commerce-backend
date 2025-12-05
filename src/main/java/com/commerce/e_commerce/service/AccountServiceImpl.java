@@ -77,7 +77,7 @@ public class AccountServiceImpl implements AccountService {
             throw new ApiException("EMAIL_ALREADY_IN_USE", HttpStatus.BAD_REQUEST);
         }
         user.setEmail(newMail);
-        // kaydetmek yeterli (JWT refresh ile yeni email claim'i üretmek istersen login/refresh çağrısı yaptırırsın)
+
     }
 
     @Override

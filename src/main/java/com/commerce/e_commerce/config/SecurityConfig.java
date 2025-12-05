@@ -38,16 +38,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         var cfg = new org.springframework.web.cors.CorsConfiguration();
         cfg.addAllowedHeader("*");
-        // JWT'yi header'da taşıyorsan credentials'a gerek yok:
-        cfg.setAllowCredentials(false); // cookie kullanacaksan true yap
+
+        cfg.setAllowCredentials(false);
         cfg.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:3000"
-                // prod domainlerin: "https://shop.yourdomain.com" vb.
+
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
-        // cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","X-Requested-With"));
-        // İstersen response'ta göstermek istediklerin:
         cfg.setExposedHeaders(List.of("Authorization"));
         cfg.setMaxAge(3600L); // saniye
 
@@ -101,7 +99,7 @@ public class SecurityConfig {
                         // (Varsa) yönetim paneli
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // geri kalan her şey auth ister
+                        // geri kalan her şey auth iste
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

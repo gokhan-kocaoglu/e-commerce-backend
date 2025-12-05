@@ -10,6 +10,6 @@ public record AddressRequest(
         @NotBlank String state,
         @NotBlank String postalCode,
         @NotBlank String countryCode,
-        Boolean   defaultShipping,  // null -> dokunma, true/false -> set et
+        Boolean   defaultShipping,
         Boolean   defaultBilling
 ) {}

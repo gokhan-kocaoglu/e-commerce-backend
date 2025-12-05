@@ -181,8 +181,7 @@ public class CartServiceImpl implements CartService {
             // cart_item kayıtları da silinecek.
             cart.getItems().clear();
 
-            // İstersen burada save çağırabilirsin ama @Transactional olduğu için
-            // genelde gerek yok, commit’te flush edilir:
+
             // cartRepo.save(cart);
         });
     }

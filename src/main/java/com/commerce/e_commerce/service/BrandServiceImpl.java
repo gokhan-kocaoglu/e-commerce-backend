@@ -61,7 +61,6 @@ public class BrandServiceImpl implements BrandService {
     @Transactional(readOnly = true)
     @Override
     public List<BrandResponse> listAll() {
-        // İstersen sabit bir sıralama da verebilirsin:
         var all = brandRepo.findAll(org.springframework.data.domain.Sort.by("name").ascending());
         return all.stream().map(mapper::toBrandResponse).toList();
     }

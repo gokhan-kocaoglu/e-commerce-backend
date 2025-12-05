@@ -14,7 +14,7 @@ import java.time.Instant;
 @Getter
 @Setter
 public class Campaign extends SoftDeletable {
-    @Column(nullable=false, length=140) private String title;      // slider başlığı
+    @Column(nullable=false, length=140) private String title;
     @Column(length=280) private String subtitle;
     @Column(length=1000) private String description;
     private String imageUrl;

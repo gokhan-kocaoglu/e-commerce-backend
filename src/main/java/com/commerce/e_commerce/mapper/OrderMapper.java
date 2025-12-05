@@ -30,8 +30,6 @@ public interface OrderMapper {
                         i.getSkuSnapshot(),
                         i.getProductTitleSnapshot(),
                         i.getQuantity(),
-                        // Aşağıdaki iki satır, CommonMapper.centsToUsdMoney(Long) ile aynı mantıkta olmalı.
-                        // MapStruct default method içinde @Named kullanamadığımız için MoneyDto’yı doğrudan kuruyoruz.
                         CommonMapperStatics.centsToUsd(i.getUnitPriceCents()),
                         CommonMapperStatics.centsToUsd(i.getLineTotalCents()),
                         i.getProductImageUrlSnapshot(),

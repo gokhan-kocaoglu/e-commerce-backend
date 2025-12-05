@@ -26,10 +26,10 @@ public class Payment extends BaseEntity {
     private Long amountCents;
 
     @Column(length=80)
-    private String provider;        // iyzico/stripe/etc.
+    private String provider;
 
     @Column(length=140)
-    private String providerRef;    // transaction id
+    private String providerRef;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", columnDefinition = "jsonb")

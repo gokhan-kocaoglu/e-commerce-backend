@@ -59,7 +59,7 @@ public interface MarketingMapper {
             ci.setCollection(entity);
             ci.setSortOrder(it.sortOrder());
             ci.setImageUrl(it.imageUrl());
-            // product FK service’te resolve edilir
+            // product FK service’te resolve et
             entity.getItems().add(ci);
         }
     }

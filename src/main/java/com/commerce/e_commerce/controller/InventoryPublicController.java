@@ -17,19 +17,16 @@ public class InventoryPublicController {
 
     private final InventoryService inventoryService;
 
-    // PUBLIC: tek varyant stok görüntüleme
     @GetMapping("/variants/{variantId}/stock")
     public ResponseEntity<ApiResponse<StockResponse>> stock(@PathVariable UUID variantId) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.getStock(variantId)));
     }
 
-    // PUBLIC/ADMIN: hareket geçmişi (istersen ADMIN’e kısıtlayabilirsin)
     @GetMapping("/variants/{variantId}/movements")
     public ResponseEntity<ApiResponse<List<StockMovementResponse>>> movements(@PathVariable UUID variantId) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.movements(variantId)));
     }
 
-    // CHECKOUT: rezervasyon & release & consume
     @PostMapping("/reservations")
     public ResponseEntity<ApiResponse<ReservationResult>> reserve(@RequestBody ReservationRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.reserve(req)));

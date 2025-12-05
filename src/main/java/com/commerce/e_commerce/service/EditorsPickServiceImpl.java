@@ -54,7 +54,7 @@ public class EditorsPickServiceImpl implements EditorsPickService {
 
     @Override
     public EditorsPickResponse create(EditorsPickRequest req) {
-        // key benzersizliği (opsiyonel)
+        // key benzersizliği
         if (req.key() != null && editorsPickRepo.existsByKeyAndDeletedFalse(req.key())) {
             throw new ApiException("EDITORS_PICK_KEY_ALREADY_EXISTS", HttpStatus.BAD_REQUEST);
         }
@@ -96,7 +96,7 @@ public class EditorsPickServiceImpl implements EditorsPickService {
         if (ids == null || ids.isEmpty()) return new ArrayList<>();
 
         // Category de SoftDeletable ve @Where(deleted=false) ise,
-        // findAllById sadece aktif olanları döndürür.
+        // findAllById sadece aktif olanları döndür.
         var found = categoryRepo.findAllById(ids);
 
         // istenen ID sayısı ile bulunan aktif kategori sayısı uyuşmalı

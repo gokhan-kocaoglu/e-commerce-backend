@@ -41,7 +41,6 @@ public class CampaignAdminController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    // Yönetim UI’ı için yardımcı GET'ler:
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CampaignResponse>> get(@PathVariable UUID id) {

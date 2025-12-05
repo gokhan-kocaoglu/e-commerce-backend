@@ -51,8 +51,8 @@ public interface CatalogMapper {
     // =======================
     // Product (create / update)
     // =======================
-    @Mapping(target = "category", ignore = true) // service set eder
-    @Mapping(target = "brand", ignore = true)    // service set eder
+    @Mapping(target = "category", ignore = true) // service set et
+    @Mapping(target = "brand", ignore = true)    // service set et
     @Mapping(target = "images", ignore = true)   // afterMapping ekler
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "version", ignore = true)

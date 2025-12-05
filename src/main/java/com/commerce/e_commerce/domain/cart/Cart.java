@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 public class Cart extends SoftDeletable {
-    @ManyToOne(fetch = FetchType.LAZY) // anonymous cart olabilir
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
     @OneToMany(mappedBy="cart", cascade=CascadeType.ALL, orphanRemoval=true)

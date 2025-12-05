@@ -16,10 +16,10 @@ import java.time.Instant;
 @Setter
 public class Coupon extends SoftDeletable {
     @Column(nullable=false, length=40) private String code;
-    @Column(nullable=false) private Long amountCents;  // veya percent
-    private boolean percentage;                       // true ise amount %’dir
+    @Column(nullable=false) private Long amountCents;
+    private boolean percentage;
     private Instant startsAt;
     private Instant endsAt;
-    private Integer usageLimit;  // null = sınırsız
+    private Integer usageLimit;
     private Integer usedCount = 0;
 }

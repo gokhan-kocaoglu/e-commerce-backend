@@ -49,11 +49,11 @@ public class ProductDetailServiceImpl implements ProductDetailService {
         return detailRepo.findByProductIdAndDeletedFalse(productId)
                 .map(mapper::toResponse)
                 .orElseGet(() -> new ProductDetailResponse(
-                        /* id            */ null,
-                        /* productId     */ productId,
+                        null,
+                        productId,
                         /* shortSummary  */ "",
-                        /* sections      */ java.util.List.of(),
-                        /* additionalInfo*/ java.util.Map.of()
+                        java.util.List.of(),
+                        java.util.Map.of()
                 ));
     }
 

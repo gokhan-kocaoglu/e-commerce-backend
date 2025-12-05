@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface ProductMetricsRepository extends JpaRepository<ProductMetrics, UUID> {
     Optional<ProductMetrics> findByProductId(UUID productId);
 
-    // pessimistic lock opsiyonel (yüksek eşzamanlılık için)
+    // pessimistic lock (yüksek eşzamanlılık için)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select pm from ProductMetrics pm where pm.product.id=:pid")
     Optional<ProductMetrics> findByProductIdForUpdate(@Param("pid") UUID productId);

@@ -14,7 +14,7 @@ public record ProductDetailRequest(
 ) {
     public record Section(
             String title,
-            String body,           // paragraflar tek alanda; istersen \n\n ile bölüp FE’de <p>’lere ayırırsın
+            String body,           // paragraflar tek alanda; istersen \n\n ile bölüp FE’de <p>’lere ayır
             List<String> bullets   // madde madde
     ) {}
 }

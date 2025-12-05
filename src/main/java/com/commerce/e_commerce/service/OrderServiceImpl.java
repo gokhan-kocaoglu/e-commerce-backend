@@ -246,8 +246,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String resolveMainImageUrl(com.commerce.e_commerce.domain.catalog.ProductVariant v) {
-        // TODO: Product / ProductImage modeline göre implement et.
-        // Örnek pseudo:
         var p = v.getProduct();
         if (p != null && p.getImages() != null && !p.getImages().isEmpty()) {
             return p.getImages().get(0).getUrl();
